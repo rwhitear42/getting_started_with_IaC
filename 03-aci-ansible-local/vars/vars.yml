@@ -1,0 +1,8 @@
+tenant_name: 'ACME-ANSIBLE-LOCAL'
+vrf_name: 'ACME-VRF'
+bd_name: 'ACME-BD'
+bd_subnet_gw: '1.1.1.1'
+bd_subnet_mask: 24
+ap_name: 'ACME-ANP'
+epg_web_name: 'WEB'
+epg_db_name: 'DB'

@@ -1,0 +1,4 @@
+ansible_python_interpreter: "/usr/bin/python3"
+apic_ip: 10.237.104.14
+apic_username: admin
+apic_password: "C1$co123"

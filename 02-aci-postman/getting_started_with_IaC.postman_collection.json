@@ -1,0 +1,532 @@
+{
+	"info": {
+		"_postman_id": "8f73b425-bcb6-442a-ab60-da8c77515cf4",
+		"name": "Getting Started with ACI IaC",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "LOGIN",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"pm.environment.set(\"TOKEN\", jsonData.imdata[0].aaaLogin.attributes.token);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"aaaUser\":{\n    \"attributes\":{\n      \"name\":\"{{USERNAME}}\",\n      \"pwd\":\"{{PASSWORD}}\"\n    }\n  }\n}"
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/aaaLogin.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"aaaLogin.json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Tenant",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"fvTenant\":{\n    \"attributes\":{\n      \"dn\":\"uni/tn-{{TENANT_NAME}}\",\n      \"name\":\"{{TENANT_NAME}}\",\n      \"rn\":\"tn-{{TENANT_NAME}}\",\n      \"status\":\"created,modified\"\n    }\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/mo/.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"mo",
+						".json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Tenant VRF",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"fvCtx\": {\n        \"attributes\": {\n            \"dn\": \"uni/tn-{{TENANT_NAME}}/ctx-{{VRF_NAME}}\",\n            \"name\": \"{{VRF_NAME}}\",\n            \"rn\": \"ctx-{{VRF_NAME}}\",\n            \"status\": \"created,modified\"\n        },\n        \"children\": []\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/mo/.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"mo",
+						".json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Tenant BD",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"fvBD\": {\n        \"attributes\": {\n            \"dn\": \"uni/tn-{{TENANT_NAME}}/BD-{{BD_NAME}}\",\n            \"mac\": \"00:22:BD:F8:19:FF\",\n            \"arpFlood\": \"true\",\n            \"name\": \"{{BD_NAME}}\",\n            \"rn\": \"BD-{{BD_NAME}}\",\n            \"status\": \"created,modified\"\n        },\n        \"children\": [\n            {\n                \"fvSubnet\": {\n                    \"attributes\": {\n                        \"dn\": \"uni/tn-{{TENANT_NAME}}/BD-{{BD_NAME}}/subnet-[{{SUBNET_CIDR}}]\",\n                        \"ctrl\": \"\",\n                        \"ip\": \"{{SUBNET_CIDR}}\",\n                        \"rn\": \"subnet-[{{SUBNET_CIDR}}]\",\n                        \"status\": \"created,modified\"\n                    },\n                    \"children\": []\n                }\n            },\n            {\n                \"fvRsCtx\": {\n                    \"attributes\": {\n                        \"tnFvCtxName\": \"{{VRF_NAME}}\",\n                        \"status\": \"created,modified\"\n                    },\n                    \"children\": []\n                }\n            }\n        ]\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/mo/.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"mo",
+						".json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create App Profile",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"fvAp\": {\n    \"attributes\": {\n      \"dn\": \"uni/tn-{{TENANT_NAME}}/ap-{{APP_PROFILE_NAME}}\",\n      \"name\": \"{{APP_PROFILE_NAME}}\",\n      \"rn\": \"ap-{{APP_PROFILE_NAME}}\",\n      \"status\": \"created,modified\"\n    }\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/mo/.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"mo",
+						".json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create WEB EPG",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"fvAEPg\": {\n    \"attributes\": {\n      \"dn\": \"uni/tn-{{TENANT_NAME}}/ap-{{APP_PROFILE_NAME}}/epg-{{EPG_1_NAME}}\",\n      \"name\": \"{{EPG_1_NAME}}\",\n      \"rn\": \"epg-{{EPG_1_NAME}}\",\n      \"status\": \"created,modified\"\n    },\n    \"children\": [\n      {\n        \"fvRsBd\": {\n          \"attributes\": {\n            \"tnFvBDName\": \"{{BD_NAME}}\",\n            \"status\": \"created,modified\"\n          }\n        }\n      }\n    ]\n  }\n}\n\n\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/mo/.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"mo",
+						".json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create DB EPG",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"fvAEPg\": {\n    \"attributes\": {\n      \"dn\": \"uni/tn-{{TENANT_NAME}}/ap-{{APP_PROFILE_NAME}}/epg-{{EPG_2_NAME}}\",\n      \"name\": \"{{EPG_2_NAME}}\",\n      \"rn\": \"epg-{{EPG_2_NAME}}\",\n      \"status\": \"created,modified\"\n    },\n    \"children\": [\n      {\n        \"fvRsBd\": {\n          \"attributes\": {\n            \"tnFvBDName\": \"{{BD_NAME}}\",\n            \"status\": \"created,modified\"\n          }\n        }\n      }\n    ]\n  }\n}\n\n\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/mo/.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"mo",
+						".json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create HTTPS Filter",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"fvAEPg\": {\n    \"attributes\": {\n      \"dn\": \"uni/tn-{{TENANT_NAME}}/ap-{{APP_PROFILE_NAME}}/epg-{{EPG_3_NAME}}\",\n      \"name\": \"{{EPG_3_NAME}}\",\n      \"rn\": \"epg-{{EPG_3_NAME}}\",\n      \"status\": \"created,modified\"\n    },\n    \"children\": [\n      {\n        \"fvRsBd\": {\n          \"attributes\": {\n            \"tnFvBDName\": \"{{BD_NAME}}\",\n            \"status\": \"created,modified\"\n          }\n        }\n      }\n    ]\n  }\n}\n\n\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/mo/.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"mo",
+						".json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create SQL Filter",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"vzFilter\": {\n        \"attributes\": {\n            \"dn\": \"uni/tn-{{TENANT_NAME}}/flt-sql\",\n            \"name\": \"sql\",\n            \"rn\": \"flt-sql\",\n            \"status\": \"created,modified\"\n        },\n        \"children\": [\n            {\n                \"vzEntry\": {\n                    \"attributes\": {\n                        \"dn\": \"uni/tn-{{TENANT_NAME}}/flt-sql/e-sql\",\n                        \"name\": \"sql\",\n                        \"etherT\": \"ip\",\n                        \"prot\": \"tcp\",\n                        \"dFromPort\": \"3306\",\n                        \"dToPort\": \"3306\",\n                        \"rn\": \"e-sql\",\n                        \"status\": \"created,modified\"\n                    },\n                    \"children\": []\n                }\n            }\n        ]\n    }\n}\n\n\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/mo/.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"mo",
+						".json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create INTERNET_TO_WEB Contract",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"vzBrCP\": {\n        \"attributes\": {\n            \"dn\": \"uni/tn-{{TENANT_NAME}}/brc-INTERNET_TO_WEB\",\n            \"name\": \"INTERNET_TO_WEB\",\n            \"rn\": \"brc-INTERNET_TO_WEB\",\n            \"status\": \"created,modified\"\n        },\n        \"children\": [\n            {\n                \"vzSubj\": {\n                    \"attributes\": {\n                        \"dn\": \"uni/tn-{{TENANT_NAME}}/brc-INTERNET_TO_WEB/subj-https\",\n                        \"name\": \"https\",\n                        \"rn\": \"subj-https\",\n                        \"status\": \"created,modified\"\n                    },\n                    \"children\": [\n                        {\n                            \"vzRsSubjFiltAtt\": {\n                                \"attributes\": {\n                                    \"status\": \"created,modified\",\n                                    \"tnVzFilterName\": \"https\",\n                                    \"directives\": \"\"\n                                },\n                                \"children\": []\n                            }\n                        }\n                    ]\n                }\n            }\n        ]\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/mo/.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"mo",
+						".json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create WEB_TO_DB Contract",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"vzBrCP\": {\n        \"attributes\": {\n            \"dn\": \"uni/tn-{{TENANT_NAME}}/brc-WEB_TO_DB\",\n            \"name\": \"WEB_TO_DB\",\n            \"rn\": \"brc-WEB_TO_DB\",\n            \"status\": \"created,modified\"\n        },\n        \"children\": [\n            {\n                \"vzSubj\": {\n                    \"attributes\": {\n                        \"dn\": \"uni/tn-{{TENANT_NAME}}/brc-WEB_TO_DB/subj-sql\",\n                        \"name\": \"sql\",\n                        \"rn\": \"subj-sql\",\n                        \"status\": \"created,modified\"\n                    },\n                    \"children\": [\n                        {\n                            \"vzRsSubjFiltAtt\": {\n                                \"attributes\": {\n                                    \"status\": \"created,modified\",\n                                    \"tnVzFilterName\": \"sql\",\n                                    \"directives\": \"\"\n                                },\n                                \"children\": []\n                            }\n                        }\n                    ]\n                }\n            }\n        ]\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/mo/.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"mo",
+						".json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Provide INTERNET_TO_WEB on WEB EPG",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"fvRsProv\": {\n        \"attributes\": {\n            \"tnVzBrCPName\": \"INTERNET_TO_WEB\",\n            \"status\": \"created,modified\"\n        },\n        \"children\": []\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/node/mo/uni/tn-{{TENANT_NAME}}/ap-{{APP_PROFILE_NAME}}/epg-{{EPG_1_NAME}}.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"node",
+						"mo",
+						"uni",
+						"tn-{{TENANT_NAME}}",
+						"ap-{{APP_PROFILE_NAME}}",
+						"epg-{{EPG_1_NAME}}.json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Consume WEB_TO_DB on WEB EPG",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"fvRsCons\": {\n        \"attributes\": {\n            \"tnVzBrCPName\": \"WEB_TO_DB\",\n            \"status\": \"created,modified\"\n        },\n        \"children\": []\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/node/mo/uni/tn-{{TENANT_NAME}}/ap-{{APP_PROFILE_NAME}}/epg-{{EPG_1_NAME}}.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"node",
+						"mo",
+						"uni",
+						"tn-{{TENANT_NAME}}",
+						"ap-{{APP_PROFILE_NAME}}",
+						"epg-{{EPG_1_NAME}}.json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Provide WEB_TO_DB on DB EPG",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"fvRsProv\": {\n        \"attributes\": {\n            \"tnVzBrCPName\": \"WEB_TO_DB\",\n            \"status\": \"created,modified\"\n        },\n        \"children\": []\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/node/mo/uni/tn-{{TENANT_NAME}}/ap-{{APP_PROFILE_NAME}}/epg-{{EPG_2_NAME}}.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"node",
+						"mo",
+						"uni",
+						"tn-{{TENANT_NAME}}",
+						"ap-{{APP_PROFILE_NAME}}",
+						"epg-{{EPG_2_NAME}}.json"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Tenant",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Cookie",
+						"value": "APIC-cookie={{TOKEN}}"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"fvTenant\":{\n    \"attributes\":{\n      \"dn\":\"uni/tn-{{TENANT_NAME}}\",\n      \"status\":\"deleted\"\n    }\n  }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://{{APIC}}/api/mo/.json",
+					"protocol": "https",
+					"host": [
+						"{{APIC}}"
+					],
+					"path": [
+						"api",
+						"mo",
+						".json"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

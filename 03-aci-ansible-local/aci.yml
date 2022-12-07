@@ -1,0 +1,226 @@
+- hosts: dc_sim
+  gather_facts: False
+  
+  vars:
+    apic_info: &apic_info
+      host: "{{ apic_ip }}"
+      username: "{{ apic_username }}"
+      password: "{{ apic_password }}"
+      validate_certs: no
+    
+    state: present
+  
+  tasks:
+  # - include_vars: vars.yml
+  - include_vars: 
+      dir: vars
+    tags:
+      - tenant
+
+  - name: Add/Remove Tenant
+    cisco.aci.aci_tenant:
+      <<: *apic_info
+      tenant: "{{ tenant_name }}"
+      description: 'Created with Ansible'
+      annotation: "orchestrator:ansible"
+      state: "{{ state }}"
+    register: tenant
+    tags:
+      - tenant
+
+  - name: Add/Remove Tenant VRF
+    cisco.aci.aci_vrf:
+      <<: *apic_info
+      vrf: "{{ vrf_name }}"
+      description: 'Created with Ansible'
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      state: "{{ state }}"
+    register: vrf
+
+  - name: Add/Remove Bridge Domain
+    cisco.aci.aci_bd:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      bd: "{{ bd_name }}"
+      description: 'Created with Ansible'
+      vrf: "{{ vrf.mo.fvCtx.attributes.name }}"
+      state: "{{ state }}"
+    register: bd
+
+  - name: Add/Remove a BD Subnet
+    cisco.aci.aci_bd_subnet:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      bd: "{{ bd.mo.fvBD.attributes.name }}"
+      description: 'Created with Ansible'
+      gateway: "{{ bd_subnet_gw }}"
+      mask: "{{ bd_subnet_mask }}"
+      state: "{{ state }}"
+
+  - name: Add/Remove an Application Profile
+    cisco.aci.aci_ap:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      ap: "{{ ap_name }}"
+      description: 'Created with Ansible'
+      state: "{{ state }}"
+    register: anp
+
+  - name: Add/Remove WEB EPG
+    cisco.aci.aci_epg:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      ap: "{{ anp.mo.fvAp.attributes.name }}"
+      epg: "{{ epg_web_name }}"
+      description: 'Created with Ansible'
+      bd: "{{ bd.mo.fvBD.attributes.name }}"
+      monitoring_policy: default
+      preferred_group: yes
+      state: "{{ state }}"
+    register: epg_web
+
+  - name: Add/Remove DB EPG
+    cisco.aci.aci_epg:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      ap: "{{ anp.mo.fvAp.attributes.name }}"
+      epg: "{{ epg_db_name }}"
+      description: 'Created with Ansible'
+      bd: "{{ bd.mo.fvBD.attributes.name }}"
+      monitoring_policy: default
+      preferred_group: yes
+      state: "{{ state }}"
+    register: epg_db
+
+  - name: Add/Remove https Contract Filter
+    cisco.aci.aci_filter:
+      <<: *apic_info
+      filter: https
+      description: 'Created with Ansible'
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      state: "{{ state }}"
+    register: filter_https
+
+  - name: Add/Remove https Contract Filter Entry
+    cisco.aci.aci_filter_entry:
+      <<: *apic_info
+      entry: https
+      state: "{{ state }}"
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      filter: "{{ filter_https.mo.vzFilter.attributes.name }}"
+      ether_type: ipv4
+      ip_protocol: tcp
+      dst_port: https
+      descr: 'Created with Ansible'
+    register: filter_https_subj
+
+  - name: Add/Remove sql Contract Filter
+    cisco.aci.aci_filter:
+      <<: *apic_info
+      filter: sql
+      description: 'Created with Ansible'
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      state: "{{ state }}"
+    register: filter_sql
+
+  - name: Add/Remove sql Contract Filter Entry
+    cisco.aci.aci_filter_entry:
+      <<: *apic_info
+      entry: sql
+      state: "{{ state }}"
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      filter: "{{ filter_sql.mo.vzFilter.attributes.name }}"
+      ether_type: ipv4
+      ip_protocol: tcp
+      dst_port: 3306
+      descr: 'Created with Ansible'
+    register: filter_sql_subj
+
+  - name: Add/Remove Internet_Web Contract
+    cisco.aci.aci_contract:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      contract: 'INTERNET_TO_WEB'
+      description: 'Created with Ansible'
+      state: "{{ state }}"
+    register: int_web_contract
+
+  - name: Add/Remove Internet_Web Contract Subject
+    cisco.aci.aci_contract_subject:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      contract: "{{ int_web_contract.mo.vzBrCP.attributes.name }}"
+      subject: https
+      description: 'Created with Ansible'
+      state: "{{ state }}"
+    register: int_web_contract_subj
+
+  - name: Bind Filter to Internet_Web Contract Subject
+    cisco.aci.aci_contract_subject_to_filter:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      contract: "{{ int_web_contract.mo.vzBrCP.attributes.name }}"
+      subject: "{{ int_web_contract_subj.mo.vzSubj.attributes.name }}"
+      filter: "{{ filter_https_subj.mo.vzEntry.attributes.name }}"
+      state: "{{ state }}"
+
+  - name: Add/Remove WEB_TO_DB Contract
+    cisco.aci.aci_contract:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      contract: 'WEB_TO_DB'
+      description: 'Created with Ansible'
+      state: "{{ state }}"
+    register: web_db_contract
+
+  - name: Add/Remove WEB_TO_DB Contract Subject
+    cisco.aci.aci_contract_subject:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      contract: "{{ web_db_contract.mo.vzBrCP.attributes.name }}"
+      subject: sql
+      description: 'Created with Ansible'
+      state: "{{ state }}"
+    register: web_db_contract_subj
+
+  - name: Bind Filter to Internet_Web Contract Subject
+    cisco.aci.aci_contract_subject_to_filter:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      contract: "{{ web_db_contract.mo.vzBrCP.attributes.name }}"
+      subject: "{{ web_db_contract_subj.mo.vzSubj.attributes.name }}"
+      filter: "{{ filter_sql_subj.mo.vzEntry.attributes.name }}"
+      state: "{{ state }}"
+
+  - name: Bind INTERNET_TO_WEB Contract to WEB EPG
+    cisco.aci.aci_epg_to_contract:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      ap: "{{ anp.mo.fvAp.attributes.name }}"
+      epg: "{{ epg_web.mo.fvAEPg.attributes.name }}"
+      contract: "{{ int_web_contract.mo.vzBrCP.attributes.name }}"
+      contract_type: provider
+      state: "{{ state }}"
+
+  - name: Bind WEB_TO_DB Contract to WEB EPG
+    cisco.aci.aci_epg_to_contract:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      ap: "{{ anp.mo.fvAp.attributes.name }}"
+      epg: "{{ epg_web.mo.fvAEPg.attributes.name }}"
+      contract: "{{ web_db_contract.mo.vzBrCP.attributes.name }}"
+      contract_type: consumer
+      state: "{{ state }}"
+
+  - name: Bind WEB_TO_DB Contract to DB EPG
+    cisco.aci.aci_epg_to_contract:
+      <<: *apic_info
+      tenant: "{{ tenant.mo.fvTenant.attributes.name }}"
+      ap: "{{ anp.mo.fvAp.attributes.name }}"
+      epg: "{{ epg_db.mo.fvAEPg.attributes.name }}"
+      contract: "{{ web_db_contract.mo.vzBrCP.attributes.name }}"
+      contract_type: provider
+      state: "{{ state }}"
+
+
+
